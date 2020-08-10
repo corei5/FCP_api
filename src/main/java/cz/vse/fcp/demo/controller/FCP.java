@@ -5,8 +5,16 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.*;
 
+import java.util.HashSet;
+import java.util.Iterator;
+
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.IRI;
+
+//update start 10/8/2020
+import org.semanticweb.owlapi.model.MissingImportHandlingStrategy;
+//update End 10/8/2020
+
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataExactCardinality;
@@ -55,6 +63,17 @@ public class FCP {
         try {
             //init for each ontology
             this.manager = OWLManager.createOWLOntologyManager();
+
+            //update start 10/8/2020
+
+            this.manager.getOntologyConfigurator().setMissingImportHandlingStrategy(MissingImportHandlingStrategy.SILENT);
+            this.manager.getOntologyConfigurator().setConnectionTimeout(500);
+            //09-08-20, START silent missing imports handling
+            //this.manager.getOntologyConfigurator().setMissingImportHandlingStrategy(MissingImportHandlingStrategy.SILENT);
+            //09-08-20, END silent missing imports handling
+
+            //update End 10/8/2020
+
             this.ontology=this.manager.loadOntology(IRI.create(onto));
             this.factory=manager.getOWLDataFactory();
 
@@ -89,11 +108,39 @@ public class FCP {
                 considerImport=Imports.INCLUDED;
             else
                 considerImport=Imports.EXCLUDED;
-            for(OWLClass cls : this.ontology.getClassesInSignature(considerImport)) {
+
+            //update start 10/8/2020
+
+            //for(OWLClass cls : this.ontology.getClassesInSignature(considerImport)) {
+            //10-08-20, Java8 for stream
+            Iterator<OWLClass> iter = this.ontology.classesInSignature(considerImport).iterator();
+            while(iter.hasNext()) {
+                OWLClass cls = iter.next();
+
+            //update end 10/8/2020
+
 
                 //the iteration over all partial definitions and checking of different types of anonymous expressions
-                EntitySearcher.getSuperClasses(cls, this.ontology).forEach((OWLClassExpression exp) -> {
+
+
+                //update start 10/8/2020
+                //EntitySearcher.getSuperClasses(cls, this.ontology).forEach((OWLClassExpression exp) -> {
                     //System.out.println("   "+cls+" rdfs:subClassOf:"+exp);
+
+                //10-08-20, Java8 for stream
+                Iterator<OWLClassExpression> iter1 = EntitySearcher.getSuperClasses(cls, this.ontology).iterator();
+
+                while(iter1.hasNext()) {
+                    OWLClassExpression exp = iter1.next();
+
+
+
+                    //update end 10/8/2020
+
+
+
+
+
                     if(exp.isAnonymous()) {
                         if (exp instanceof OWLObjectSomeValuesFrom) {
                             String p = ((OWLObjectSomeValuesFrom) exp).getProperty().toString();
@@ -101,7 +148,16 @@ public class FCP {
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString()+";"+((OWLObjectSomeValuesFrom) exp).getFiller());
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
 
-                            for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                            //start..................................
+
+                            //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                            Iterator<Node<OWLClass>> it1 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                            while(it1.hasNext()) {
+                                Node<OWLClass> n = it1.next();
+
+                            //end...........................................
+
                                 for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                     //the propagation to the subclasses
                                     if(!cls1.isBottomEntity()) {
@@ -116,7 +172,16 @@ public class FCP {
                             String p = ((OWLDataSomeValuesFrom) exp).getProperty().toString();
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
 
-                            for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                            //start.........................................
+                            //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                            Iterator<Node<OWLClass>> it2 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                            while(it2.hasNext()) {
+                                Node<OWLClass> n = it2.next();
+
+                            //end.................................................
+
+
                                 for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                     //the propagation to the subclasses
                                     if(!cls1.isBottomEntity()) {
@@ -131,7 +196,17 @@ public class FCP {
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString()+";"+((OWLObjectHasValue) exp).getFiller());
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
 
-                            for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                            //start.............................................................
+
+                            //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                            Iterator<Node<OWLClass>> it3 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                            while(it3.hasNext()) {
+                                Node<OWLClass> n = it3.next();
+
+
+                            //end..................................................................
+
                                 for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                     //the propagation to the subclasses
                                     if(!cls1.isBottomEntity()) {
@@ -145,7 +220,20 @@ public class FCP {
                         if (exp instanceof OWLDataHasValue) {
                             String p = ((OWLDataHasValue) exp).getProperty().toString();
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
-                            for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                            //start...................................
+
+                            //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                            Iterator<Node<OWLClass>> it4 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                            while(it4.hasNext()) {
+
+                                Node<OWLClass> n = it4.next();
+
+
+                            //end.............................................
+
+
                                 for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                     //the propagation to the subclasses
                                     if(!cls1.isBottomEntity()) {
@@ -158,7 +246,18 @@ public class FCP {
                         if (exp instanceof OWLObjectHasSelf) {
                             String p = ((OWLObjectHasSelf) exp).getProperty().toString();
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
-                            for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                            //start...............................................
+
+                            //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                            Iterator<Node<OWLClass>> it5 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                            while(it5.hasNext()) {
+                                Node<OWLClass> n = it5.next();
+
+                            //end..................................................
+
                                 for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                     //the propagation to the subclasses
                                     if(!cls1.isBottomEntity()) {
@@ -174,7 +273,17 @@ public class FCP {
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString()+";"+((OWLObjectMinCardinality) exp).getFiller());
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
 
-                                for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                                //start..............................
+
+                                //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                                Iterator<Node<OWLClass>> it6 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                                while(it6.hasNext()) {
+                                    Node<OWLClass> n = it6.next();
+
+
+                                //end
                                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                         //the propagation to the subclasses
                                         if(!cls1.isBottomEntity()) {
@@ -190,7 +299,18 @@ public class FCP {
                             if(((OWLDataMinCardinality) exp).getCardinality()>=0) {
                                 String p = ((OWLDataMinCardinality) exp).getProperty().toString();
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
-                                for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                                //start...................................
+
+                                //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                                Iterator<Node<OWLClass>> it7 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                                while(it7.hasNext()) {
+                                    Node<OWLClass> n = it7.next();
+
+
+                                //end.......................................
+
                                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                         //the propagation to the subclasses
                                         if(!cls1.isBottomEntity()) {
@@ -207,7 +327,16 @@ public class FCP {
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString()+";"+((OWLObjectMaxCardinality) exp).getFiller());
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
 
-                                for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                                //sart....................................
+                                //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                                Iterator<Node<OWLClass>> it8 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                                while(it8.hasNext()) {
+                                    Node<OWLClass> n = it8.next();
+
+
+                                //end...............................................
                                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                         //the propagation to the subclasses
                                         if(!cls1.isBottomEntity()) {
@@ -223,7 +352,17 @@ public class FCP {
                             if(((OWLDataMaxCardinality) exp).getCardinality()>=0) {
                                 String p = ((OWLDataMaxCardinality) exp).getProperty().toString();
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
-                                for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                                //start.................................
+                                //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                                Iterator<Node<OWLClass>> it9 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                                while(it9.hasNext()) {
+                                    Node<OWLClass> n = it9.next();
+
+
+                                    //end............................................
+
                                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                         //the propagation to the subclasses
                                         if(!cls1.isBottomEntity()) {
@@ -240,7 +379,15 @@ public class FCP {
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString()+";"+((OWLObjectExactCardinality) exp).getFiller());
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
 
-                                for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                                //start.............................
+                                //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                                Iterator<Node<OWLClass>> it10 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                                while(it10.hasNext()) {
+                                    Node<OWLClass> n = it10.next();
+
+                                //end.................................
+
                                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                         //the propagation to the subclasses
                                         if(!cls1.isBottomEntity()) {
@@ -256,7 +403,18 @@ public class FCP {
                             if(((OWLDataExactCardinality) exp).getCardinality()>=0) {
                                 String p = ((OWLDataExactCardinality) exp).getProperty().toString();
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
-                                for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                                //start........................
+                                //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                                Iterator<Node<OWLClass>> it11 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                                while(it11.hasNext()) {
+                                    Node<OWLClass> n = it11.next();
+
+
+                                    //end......................
+
+
                                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                         //the propagation to the subclasses
                                         if(!cls1.isBottomEntity()) {
@@ -270,7 +428,21 @@ public class FCP {
                 });
                 //the iteration over all complete definitions
 //                for(OWLClassExpression exp : EntitySearcher.getEquivalentClasses(cls, this.ontology)) {
-                EntitySearcher.getEquivalentClasses(cls, this.ontology).forEach((OWLClassExpression exp) -> {
+
+                //start........................
+
+
+                //EntitySearcher.getEquivalentClasses(cls, this.ontology).forEach((OWLClassExpression exp) -> {
+                Iterator<OWLClassExpression> iter2 = EntitySearcher.getEquivalentClasses(cls, this.ontology).iterator();
+
+                while(iter2.hasNext()) {
+                    OWLClassExpression exp = iter2.next();
+
+
+
+
+                    //end.............................
+
                     if(exp.isAnonymous()) {
 
                         if (exp instanceof OWLObjectSomeValuesFrom) {
@@ -278,7 +450,18 @@ public class FCP {
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString()+";"+((OWLObjectSomeValuesFrom) exp).getFiller());
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
 
-                            for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                            //start.............................
+
+                            //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                            Iterator<Node<OWLClass>> it1 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                            while(it1.hasNext()) {
+                                Node<OWLClass> n = it1.next();
+
+                            //end............................
+
+
                                 for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                     //the propagation to the subclasses
                                     if(!cls1.isBottomEntity()) {
@@ -292,7 +475,16 @@ public class FCP {
                         if (exp instanceof OWLDataSomeValuesFrom) {
                             String p = ((OWLDataSomeValuesFrom) exp).getProperty().toString();
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
-                            for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                            //start......................
+                            //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                            Iterator<Node<OWLClass>> it2 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                            while(it2.hasNext()) {
+                                Node<OWLClass> n = it2.next();
+
+                            //end................................
                                 for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                     //the propagation to the subclasses
                                     if(!cls1.isBottomEntity()) {
@@ -307,7 +499,17 @@ public class FCP {
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString()+";"+((OWLObjectHasValue) exp).getFiller());
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
 
-                            for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                            //start....................
+
+                            //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                            Iterator<Node<OWLClass>> it3 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                            while(it3.hasNext()) {
+                                Node<OWLClass> n = it3.next();
+
+
+                            //end..............................
+
                                 for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                     //the propagation to the subclasses
                                     if(!cls1.isBottomEntity()) {
@@ -321,7 +523,17 @@ public class FCP {
                         if (exp instanceof OWLDataHasValue) {
                             String p = ((OWLDataHasValue) exp).getProperty().toString();
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
-                            for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                            //start.......................................
+
+                            //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                            Iterator<Node<OWLClass>> it4 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                            while(it4.hasNext()) {
+                                Node<OWLClass> n = it4.next();
+
+                            //end..................................................
+
                                 for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                     //the propagation to the subclasses
                                     if(!cls1.isBottomEntity()) {
@@ -334,7 +546,17 @@ public class FCP {
                         if (exp instanceof OWLObjectHasSelf) {
                             String p = ((OWLObjectHasSelf) exp).getProperty().toString();
                             ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
-                            for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                            //start.................
+
+                            //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                            Iterator<Node<OWLClass>> it5 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                            while(it5.hasNext()) {
+                                Node<OWLClass> n = it5.next();
+
+                            //end........................
+
                                 for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                     //the propagation to the subclasses
                                     if(!cls1.isBottomEntity()) {
@@ -350,7 +572,16 @@ public class FCP {
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString()+";"+((OWLObjectMinCardinality) exp).getFiller());
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
 
-                                for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                                //start..................................
+
+                                //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                                Iterator<Node<OWLClass>> it6 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                                while(it6.hasNext()) {
+                                    Node<OWLClass> n = it6.next();
+
+                                //end....................................
+
                                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                         //the propagation to the subclasses
                                         if(!cls1.isBottomEntity()) {
@@ -366,7 +597,19 @@ public class FCP {
                             if(((OWLDataMinCardinality) exp).getCardinality()>=0) {
                                 String p = ((OWLDataMinCardinality) exp).getProperty().toString();
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
-                                for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                                //start..............................
+
+                                //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                                Iterator<Node<OWLClass>> it7 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                                while(it7.hasNext()) {
+                                    Node<OWLClass> n = it7.next();
+
+
+                                //end................................
+
                                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                         //the propagation to the subclasses
                                         if(!cls1.isBottomEntity()) {
@@ -383,7 +626,18 @@ public class FCP {
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString()+";"+((OWLObjectMaxCardinality) exp).getFiller());
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
 
-                                for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                                //start.................................
+
+                                //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                                Iterator<Node<OWLClass>> it8 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                                while(it8.hasNext()) {
+                                    Node<OWLClass> n = it8.next();
+
+
+                                //end.................................
+
                                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                         //the propagation to the subclasses
                                         if(!cls1.isBottomEntity()) {
@@ -399,7 +653,19 @@ public class FCP {
                             if(((OWLDataMaxCardinality) exp).getCardinality()>=0) {
                                 String p = ((OWLDataMaxCardinality) exp).getProperty().toString();
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
-                                for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                                //start...........................
+
+                                //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                                Iterator<Node<OWLClass>> it9 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                                while(it9.hasNext()) {
+                                    Node<OWLClass> n = it9.next();
+
+
+
+                                    //end........................................
+
                                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                         //the propagation to the subclasses
                                         if(!cls1.isBottomEntity()) {
@@ -416,7 +682,18 @@ public class FCP {
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString()+";"+((OWLObjectExactCardinality) exp).getFiller());
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
 
-                                for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                                //start.................................
+                                //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                                Iterator<Node<OWLClass>> it10 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                                while(it10.hasNext()) {
+                                    Node<OWLClass> n = it10.next();
+
+                                //end....................................
+
+
                                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                         //the propagation to the subclasses
                                         if(!cls1.isBottomEntity()) {
@@ -432,7 +709,17 @@ public class FCP {
                             if(((OWLDataExactCardinality) exp).getCardinality()>=0) {
                                 String p = ((OWLDataExactCardinality) exp).getProperty().toString();
                                 ACpropertyFillerBlist.add(cls.toString()+";"+p.toString());
-                                for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                                //start..............................
+
+                                //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+
+                                Iterator<Node<OWLClass>> it11 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                                while(it11.hasNext()) {
+                                    Node<OWLClass> n = it11.next();
+
+                                //end..........................
                                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
                                         //the propagation to the subclasses
                                         if(!cls1.isBottomEntity()) {
@@ -473,8 +760,21 @@ public class FCP {
             List<String> list2=new ArrayList<>();
             List<String> list3=new ArrayList<>();
             List<String> list4=new ArrayList<>();
-            for(OWLObjectProperty op : this.ontology.getObjectPropertiesInSignature(considerImport)) {
-                for(Node<OWLClass> n : reasoner.getObjectPropertyDomains(op, false).getNodes()) {
+
+            //start.........................................
+            //for(OWLObjectProperty op : this.ontology.getObjectPropertiesInSignature(considerImport)) {
+              //  for(Node<OWLClass> n : reasoner.getObjectPropertyDomains(op, false).getNodes()) {
+            Iterator<OWLObjectProperty> iter3 = this.ontology.objectPropertiesInSignature(considerImport).iterator();
+
+            while(iter3.hasNext()) {
+
+                OWLObjectProperty op = iter3.next();
+
+                Iterator<Node<OWLClass>> it1 = reasoner.getObjectPropertyDomains(op, false).nodes().iterator();
+
+                while(it1.hasNext()) {
+                    Node<OWLClass> n = it1.next();
+            //end..................................................
                     //it does not consider Nothing
                     if(n.isBottomNode()) break;
                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
@@ -504,10 +804,30 @@ public class FCP {
                         //start v3
                         HashSet<String> subclasses = new HashSet<String>();
                         HashSet<String> individuals = new HashSet<String>();
-                        EntitySearcher.getRanges(op, this.ontology).forEach((OWLClassExpression exp) -> {
+
+                        //start......................
+                        //EntitySearcher.getRanges(op, this.ontology).forEach((OWLClassExpression exp) -> {
+                        Iterator<OWLClassExpression> iter4 = EntitySearcher.getRanges(op, this.ontology).iterator();
+
+                        while(iter4.hasNext()) {
+                            OWLClassExpression exp = iter4.next();
+
+                        //end..........................
+
+
                             if(exp instanceof OWLClass) {
                                 OWLClass cls2 = (OWLClass) exp;
-                                for(Node<OWLClass> n2 : reasoner.getSubClasses(cls2, false).getNodes()) {
+
+                                //start............................
+                                //for(Node<OWLClass> n2 : reasoner.getSubClasses(cls2, false).getNodes()) {
+                                Iterator<Node<OWLClass>> it2 = reasoner.getSubClasses(cls2, false).nodes().iterator();
+
+                                while(it2.hasNext()) {
+                                    Node<OWLClass> n2 = it2.next();
+
+                                //end......................................
+
+
                                     for(OWLClass cls3 : n2.getEntitiesMinusBottom()) {
                                         if(ACpropertyFillerBlist.contains(cls1.toString()+";"+op.toString()+";"+cls3.toString())) {
                                             System.out.println("blist applied:"+cls1.toString()+";"+op.toString()+";"+cls3.toString());
@@ -517,8 +837,24 @@ public class FCP {
                                     }
                                 }
                                 //start v4
-                                for(Node<OWLNamedIndividual> n2 : reasoner.getInstances(cls2, false).getNodes()) {
-                                    for(OWLNamedIndividual ind : n2.getEntities()) {
+
+
+                                //start........................
+
+                                //for(Node<OWLNamedIndividual> n2 : reasoner.getInstances(cls2, false).getNodes()) {
+                                  //  for(OWLNamedIndividual ind : n2.getEntities()) {
+                                Iterator<Node<OWLNamedIndividual>> it3 = reasoner.getInstances(cls2, false).nodes().iterator();
+
+                                while(it3.hasNext()) {
+                                    Node<OWLNamedIndividual> n2 = it3.next();
+
+                                    Iterator<OWLNamedIndividual> it4 = n2.entities().iterator();
+
+                                    while(it4.hasNext()) {
+                                        OWLNamedIndividual ind = it4.next();
+
+                                //end....................................
+
                                         if(ACpropertyFillerBlist.contains(cls1.toString()+";"+op.toString()+";"+ind.toString())) {
                                             System.out.println("blist applied:"+cls1.toString()+";"+op.toString()+";"+ind.toString());
                                             continue; //pruning
@@ -582,9 +918,24 @@ public class FCP {
 
             //for dp compute v2
 
+            //start.............................
 
-            for(OWLDataProperty dp : this.ontology.getDataPropertiesInSignature(considerImport)) {
-                for(Node<OWLClass> n : reasoner.getDataPropertyDomains(dp, false).getNodes()) {
+            //for(OWLDataProperty dp : this.ontology.getDataPropertiesInSignature(considerImport)) {
+              //  for(Node<OWLClass> n : reasoner.getDataPropertyDomains(dp, false).getNodes()) {
+
+            Iterator<OWLDataProperty> iter5 = this.ontology.dataPropertiesInSignature(considerImport).iterator();
+
+            while(iter5.hasNext()) {
+
+                OWLDataProperty dp = iter5.next();
+
+                Iterator<Node<OWLClass>> it1 = reasoner.getDataPropertyDomains(dp, false).nodes().iterator();
+
+                while(it1.hasNext()) {
+                    Node<OWLClass> n = it1.next();
+
+            //end....................................................
+
                     //if domain is Nothing not considering this
                     if(n.isBottomNode()) break;
                     for(OWLClass cls1 : n.getEntitiesMinusTop()) {
@@ -608,14 +959,34 @@ public class FCP {
 
             //3. compute v1
             List<String> list1=new ArrayList<>();
-            for(OWLClass cls : this.ontology.getClassesInSignature(considerImport)) {
+
+            //start......................
+            //for(OWLClass cls : this.ontology.getClassesInSignature(considerImport)) {
+
+            Iterator<OWLClass> iter6 = this.ontology.classesInSignature(considerImport).iterator();
+
+            while(iter6.hasNext()) {
+
+                OWLClass cls = iter6.next();
+
+            //end.............................
+
                 if(cls.isTopEntity())
                     continue;
                 //compute and print v1
                 HashSet<String> subclasses = new HashSet<String>();
                 HashSet<OWLClass> subclasses1 = new HashSet<OWLClass>();
 
-                for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                //start.......................................
+
+                //for(Node<OWLClass> n : reasoner.getSubClasses(cls, false).getNodes()) {
+                Iterator<Node<OWLClass>> it1 = reasoner.getSubClasses(cls, false).nodes().iterator();
+
+                while(it1.hasNext()) {
+                    Node<OWLClass> n = it1.next();
+
+                    //end..........................................
+
                     if(n.getEntitiesMinusBottom().size()>0) {
                         subclasses.add(n.getEntitiesMinusBottom().toString());
                         //19-12-19, because of finding CE already as equivalence for subclasses)
@@ -636,9 +1007,20 @@ public class FCP {
                     //toFile.println(subclasses1);
                     //the following work in progress
                     for(OWLClassExpression owlExpr1 : all_created_class_expressions) {
-                        if (!reasoner.getEquivalentClasses(owlExpr1).getEntities().isEmpty()) {
-                            System.out.println(reasoner.getEquivalentClasses(owlExpr1).getEntities());
-                        }
+
+                        //start....................
+
+                        //if (!reasoner.getEquivalentClasses(owlExpr1).getEntities().isEmpty()) {
+                          //  System.out.println(reasoner.getEquivalentClasses(owlExpr1).getEntities());
+                        //}
+
+                        //system control output
+                        //Iterator<Node<OWLNamedIndividual>> it3 = reasoner.getInstances(cls2, false).nodes().iterator();
+                        Iterator<OWLClass> itt = reasoner.getEquivalentClasses(owlExpr1).entities().iterator();
+                        while(itt.hasNext()) {
+                            System.out.println(itt.next());
+
+                        //end...........................
                     }
                     //19-12-19, end
                 }
